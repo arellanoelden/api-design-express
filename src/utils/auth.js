@@ -53,24 +53,30 @@ export const signin = async (req, res) => {
 }
 
 export const protect = async (req, res, next) => {
-  if (!req.headers.authorization) {
-    return res.status(400).end()
-  }
-  let token = req.headers.authorization.split('Bearer ')[1]
-  if (!token) {
+  const bearer = req.headers.authorization
+
+  if (!bearer || !bearer.startsWith('Bearer ')) {
     return res.status(401).end()
   }
 
+  const token = bearer.split('Bearer ')[1].trim()
+  let payload
   try {
-    const payload = await verifyToken(token)
-    const user = await (await User.findById(payload.id))
-      .select('-password')
-      .lean() // converts mongoose to json
-      .exec()
-    req.user = user
-    next()
+    payload = await verifyToken(token)
   } catch (e) {
-    console.error(e)
-    return res.status(400).end()
+    return res.status(401).end()
   }
+
+  const user = await User.findById(payload.id)
+    .select('-password')
+    .lean()
+    .exec()
+
+  console.log('Userr: ', user)
+  if (!user) {
+    return res.status(401).end()
+  }
+
+  req.user = user
+  next()
 }

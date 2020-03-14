@@ -1,10 +1,13 @@
 export const getOne = model => async (req, res) => {
   try {
+    console.log('userId: ', req.user._id)
+    console.log('params id: ', req.params.id)
     const doc = await model
       .findOne({ createdBy: req.user._id, _id: req.params.id })
       .lean()
       .exec()
 
+    console.log('doc: ', doc)
     if (!doc) {
       return res.status(400).end()
     }
